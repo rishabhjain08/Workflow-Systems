@@ -1,0 +1,6 @@
+roomID, name; ac, white_board, lcd_display, projector, projector+audio_facilities, sound_system, sound_system+microhpne_for_audience, audio_recording, audio_recording+microphone_for_audience, video_recording, video_recording+microphone_for_audience, video_recording+microphone_camera_for_audience
+534,Bharti 501; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+453,Bharti 204; 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0
+545,MS 545; 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0
+543,V LT 1; 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1
+675,VI LT 1; 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1

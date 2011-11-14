@@ -1,0 +1,209 @@
+#include "client.h"
+#include <iostream>
+#include <stdlib.h>
+#include <sstream>
+#include <vector>
+#include<string.h>
+using namespace std;
+
+#include "../inc/algorithms.h"
+#include "../inc/network_codes.h"
+
+bool proceed = false, proceed_gui = false;
+Client * client;
+char * stringify(Request *);
+
+void start(string, string);
+void questionnaire(int, int);
+string g_usr, g_pass, g_requestID, g_userID;
+
+int g_success = 0;
+
+void congos(int);
+
+void makeRequest(Request re){    
+    char * re_s = stringify(&re);
+
+    cout<<"Request compiled!\n";
+    client->sendData((void *) re_s, strlen(re_s));
+    cout<<"Request sent!\n";
+    
+    
+    while (!proceed_gui){sleep(1);}
+    proceed_gui = false;
+    
+
+    congos(g_success);
+}
+
+void encore(){
+    cout<<"Do you want to make another request ? (y/n) ";
+    char c;
+    cin>>c;
+    if (c == 'y'){
+        start(g_usr, g_pass);
+    }
+    else{
+        cout<<"Thanks for using!\n";
+        exit(0);
+    }
+}
+
+void * msgRcvdCB(void * data){
+    char * msg = (char *)(((struct data*) data)->msg);
+    string msg_s(msg);
+    
+    cout<<"Received message: "<<msg<<"\n";
+    
+    vector<string> x = split_(msg, ':');
+    int requestID, userID;
+    char c;
+    ostringstream ss;
+    switch(atoi(x[0].c_str())){
+        case ALL_DATA:
+        cout << x[1];
+        cout << "Enter the requestID for the request which you want to cancel, else 0 for none :";
+        cin >> requestID;
+        if (requestID != 0){
+            ss << CANCEL_REQ;
+            ss << ":";
+            ss << requestID;
+            client->sendData((void *) ss.str().c_str(), ss.str().size());
+        }
+        else{
+            cout<<"Do you want to confirm all the requests ? (y/n) ";
+            cin >> c;
+            if (c == 'y'){
+                ss << CONFIRM_REQS<<":";
+                client->sendData((void *) ss.str().c_str(), ss.str().size());
+                cout<<"All Requests confirmed !\n";
+            }
+            encore();
+        }
+        break;
+        case CONFIRM_HANDSHAKE:
+        cout<<"Got Correct Connection!\n";
+        proceed = true;
+        break;
+        case ID_FOR_REQUEST:
+        cout<<"Got requestID\n";
+        x = split_(x[1], ',');
+        requestID = atoi(x[1].c_str());
+        userID = atoi(x[0].c_str());
+        if (userID == 100){
+            cout<<"Welcome Admin !\n";
+            cout<<"Getting all pending booking requests...";
+            ss << REQUEST_ALL_A;
+            ss << ":";
+            client->sendData((void *)ss.str().c_str(), ss.str().size());
+            
+        }
+        else{
+        cout << "Calling questionaaire...\n";
+        		g_requestID = requestID;
+        		g_userID = userID;
+        		proceed_gui = true;
+        		
+        		//questionnaire(0);
+            //makeRequest(userID, requestID);  
+        }
+        break;
+        case AUTH_FAIL:
+        cout<<"Authoriztion failure!\n";
+        break;
+        case BOOK_SUCCESS:
+        //cout<<"Room Booked : "<<x[1]<<endl;
+        cout<<"Congratulations!\n";
+        proceed_gui = true;
+        g_success = 1;
+        encore();
+        break;
+        case BOOK_FAILURE:
+        cout<<"Cannot book room, try an alternate time, or make a high priority request.\n";
+        proceed_gui = true;
+        g_success = 0;
+        encore();
+        break;
+    }
+}
+
+char * stringify(Request * re){
+    string s = "";
+    ostringstream sstream;
+    sstream<<INCOMING_REQUEST;
+    sstream<< ":";
+    sstream<< re->userID;
+    sstream<<",";
+    sstream<< re->requestID;
+    sstream<<",";
+    sstream<< re->requirements;
+    sstream<<",";
+    sstream<< re->numM;
+    sstream<<",";
+    sstream<< re->date;
+    sstream<<",";
+    sstream<<re->starttime.hours;
+    sstream<<",";
+    sstream<<re->starttime.minutes;
+    sstream<<",";
+    sstream<<re->endtime.hours;
+    sstream<<",";
+    sstream<<re->endtime.minutes;
+    s = sstream.str();
+    char * c = (char *) calloc(s.size()+1, sizeof (char));
+    int i = 0;
+    for (i = 0; i < s.size(); i++){
+        c[i] = s[i];
+    }
+    c[i] = '\0';
+    return c;  
+}
+
+void start(string usr, string pass){
+    ostringstream ss;
+    g_usr = usr;
+    g_pass = pass;
+
+    ss << REQUEST_FOR_ID;
+    ss << ":";
+    ss << usr;
+    ss << ",";
+    ss << pass;
+    client->sendData((void *) ss.str().c_str(), ss.str().size());
+    while(!proceed_gui){sleep(1);}
+    proceed_gui = false;
+    questionnaire(atoi(g_userID.c_str()), atoi(g_requestID.c_str()));
+}
+
+int gui(int, char**);
+
+int createClient(const char * argv)
+{
+    
+    int std_port = 5000;
+    while(1){
+		ostringstream s;
+		s << std_port;
+		client = new Client();
+		proceed = false;
+		//cout<<"(char *)s.str().c_str() is "<<(char *)s.str().c_str()<<endl;
+		client->start((char *)argv, (char *)s.str().c_str(), msgRcvdCB, NULL);
+		//cout<<"I am after the client start\n";
+		//exit(9);
+		const char * str = "666:hello123";
+		client->sendData((void *) str, strlen(str));
+		sleep(2);
+		if (proceed){
+		    break;
+		}
+		client->shut();
+   }
+    
+    //cout<<"Requesting for ID\n";
+    
+    //start();
+    
+
+    
+    return 0;
+}

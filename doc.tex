@@ -1,0 +1,59 @@
+\documentclass[11pt,a4paper,oneside]{report}
+\usepackage{graphicx}
+\begin{document}
+\begin{titlepage}
+
+
+\title{CSP301 \\ Workflow based Booking System}
+\author{Sherjil Ozair \\ 2010CS50296 \and Rishabh Jain \\ 2010CS10241}
+\date{}
+
+\maketitle
+
+\end{titlepage}
+
+\setcounter{chapter}{1}
+
+\section{Introduction}
+The basic algorithm of the software would use a data structure of a vector of requests variables and a vector of room variables. Each Request would contain a vector which would be populated with all rooms that meets the requirement of the request. Then, a depth-first search would be applied to find a room for each request such that all requests are booked to one room. If there does not exist such a configuration, then last inserted request would be popped out and the algorithm applied again.
+
+\begin{itemize}
+\item{Client connects to the server and identifies itself. Server authorizes the client user after doing password checks.}
+\item{After this, the server creates a new thread, and assigns this thread to process this particular client's requests.}
+\item{Server allows the client to make requests. The client makes a room request detailing its requirements and specifications that it requires.}
+\item{The server makes an entry in the Requests table. If no administrative work is required, the request is processed instantaneously, and the user notified that the request is complete. The required recourses are marked unavailable henceafter.}
+\item{If there is administrative work involved, then the request is noted down in another table and added the administer's workload table. The administrator on logging would find this request and would have to approve or dissaprove this request. At the end of the day, the requests are alloted best possible rooms.}
+\item{There would be two types of requirements, a necesaary requirement and a extraneous requirement. The client can mark down his requirements as necessary or extraneous. If a necessary requirement could not be met, then we don't allot a room. It is tried that maximum number of requirements are alloted, but if an extraneous requirement cannot be met, still the room is alloted.}
+\end{itemize}
+
+
+\section{File Structure}
+\begin{itemize}
+\item{A database would consist of one folder, tables would be files in that folder.}
+\item{Tables like UserTable, RequestTable, RoomTable, ResourceTable, OperatorTable would be used.}
+\item{The tables would be in CSV format, where the first row would be the field names, and subsequent rows would be records.}
+
+\end{itemize}
+\section{Algorithm}
+For proper allotment of rooms, an algorithm would be used to decide which room should be given to whom. For example, if room1 is suitable for user1, and room1 and room2 are both suitable for user2. It would make sense to have allocate room2 to user2 and room1 to user1 and not room1 to user2, since that way user1 would not have any room. Thus, at a pre-defined time of the day, an algorithm would go thorough all the requests and do the best possible allotment so that the maximum number of users are allocated rooms and that too with maximum resources available.  \\
+
+The algorithm would work under such a constraint that if a room has been alloted to a user, then it cannot be changed. It can be changed only if the administrator does it himself, maybe because of a high priority request by someone else.
+
+\subsection{Handling concurrency}
+When a request is placed, the first action would only be to append to a request file. The user will compile his request, and when he submits, for a short while, the user will acquire lock of the request file, and then append to it, and then withdraw the lock. While this user has acquired the lock, no other user would be able to write to the file, but the user would be able to compile his request, so there would be no deadlocks. \\
+A user can only edit the record that he has created. So there cannot be two users who are editting the same record. All compilation, again, would be done without opening the file, and then when the user submits, the file lock would be acquired and the required modification done.
+
+\subsection{Networking protocol}
+\begin{itemize}
+\item{Networking is done by using different threads for sending and receiving. Sending is carried out by the main thread, while receiving is done by a separate thread.}
+\item{First, when the client connects, the server sends a handshake protocol code to the client. The client then sends back a confirm handshake code and the connection thus is established.}
+\item{The client asks username and password from the user and sends it to the server for authentication.}
+\item{The server after verifying the username/password combination from a file, sends back the user's unique ID and also generates a unique request ID.}
+\item{The client now asks the user questions about the room requirements, date and time of booking, etc. and with the requestID, compiles a request and sends it to the server.}
+\item{The server applies its algorithm with the previous request vector and the new request, and sees if all requests can fit. If all requests can fit, the server sends a book success code to the client.}
+\item{If, however, the server cannot accomodate the new request, then that request is removed from the vector of requests, and the algorithm is applied again on the old requests. The client is sent the book failure code.}
+\item{The information is displayed to the user, and either way, is asked whether he/she wants to place a new request.}
+
+\end{itemize}
+
+\end{document}
